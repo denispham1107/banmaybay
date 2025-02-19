@@ -37,19 +37,45 @@ window.addEventListener("keydown", function(e) {
 });
 window.addEventListener("keyup", e => keys[e.code] = false);
 
-// Hàm tiện ích vẽ chữ
+/* --- Thêm hỗ trợ cảm ứng (mobile) --- */
+canvas.addEventListener("touchstart", function(e) {
+  e.preventDefault();
+  let touch = e.touches[0];
+  let rect = canvas.getBoundingClientRect();
+  let touchX = touch.clientX - rect.left;
+  let touchY = touch.clientY - rect.top;
+  // Cập nhật vị trí player dựa vào vị trí chạm
+  player.x = touchX - player.width / 2;
+  player.y = touchY - player.height / 2;
+  // Khi chạm, bắn đạn
+  let bullet = new Bullet(player.x + player.width / 2, player.y);
+  bullets.push(bullet);
+});
+canvas.addEventListener("touchmove", function(e) {
+  e.preventDefault();
+  let touch = e.touches[0];
+  let rect = canvas.getBoundingClientRect();
+  let touchX = touch.clientX - rect.left;
+  let touchY = touch.clientY - rect.top;
+  // Di chuyển player theo vị trí chạm
+  player.x = touchX - player.width / 2;
+  player.y = touchY - player.height / 2;
+});
+
+/* --- Các hàm tiện ích --- */
+// Vẽ chữ
 function drawText(text, x, y, size = 20, color = WHITE) {
   ctx.fillStyle = color;
   ctx.font = size + "px Arial";
   ctx.fillText(text, x, y);
 }
 
-// Hàm tạo số ngẫu nhiên trong khoảng [min, max)
+// Sinh số ngẫu nhiên
 function randomRange(min, max) {
   return Math.random() * (max - min) + min;
 }
 
-// Hàm tạo màu ngẫu nhiên, không trùng với màu nền (đen) hoặc màu player (trắng)
+// Sinh màu ngẫu nhiên (không trùng với màu nền hoặc màu player)
 function generateRandomColor() {
   let color;
   do {
@@ -64,7 +90,7 @@ function generateRandomColor() {
   return color;
 }
 
-// Hàm kiểm tra va chạm giữa 2 hình chữ nhật
+// Kiểm tra va chạm giữa 2 hình chữ nhật
 function rectanglesIntersect(r1, r2) {
   return !(
     r2.x > r1.x + r1.width ||
@@ -75,8 +101,7 @@ function rectanglesIntersect(r1, r2) {
 }
 
 /* --- Định nghĩa các lớp game --- */
-
-// Lớp Player (máy bay của người chơi)
+// Lớp Player
 class Player {
   constructor() {
     this.width = 40;
@@ -108,14 +133,13 @@ class Player {
   }
 }
 
-// Lớp Bullet (đạn của player)
+// Lớp Bullet của player
 class Bullet {
   constructor(x, y) {
     this.x = x;
     this.y = y;
     this.radius = 5;
-    // Tăng tốc độ đạn gấp đôi (từ 10 thành 20)
-    this.speed = 20;
+    this.speed = 20; // tốc độ đạn của player (đã tăng gấp đôi)
   }
   update() {
     this.y -= this.speed;
@@ -136,21 +160,21 @@ class Enemy {
   constructor() {
     this.width = 40;
     this.height = 30;
-    // Các thuộc tính này sẽ được thiết lập khi spawnEnemy() gọi
+    // Các thuộc tính này sẽ được thiết lập bởi spawnEnemy()
     this.x = 0;
     this.y = 0;
-    // Tốc độ enemy được nhân với 1.5 để bay nhanh hơn 1.5 lần
+    // Tốc độ enemy nhân với 1.5 để bay nhanh hơn 1.5 lần
     this.speedY = randomRange(1, 3) * 1.5;
     this.speedX = randomRange(-2, 2) * 1.5;
     this.color = generateRandomColor();
-    // Tần số bắn đã thay đổi thành 800ms
+    // Tần số bắn: 800ms
     this.shootDelay = 800;
     this.lastShot = Date.now();
   }
   update() {
     this.x += this.speedX;
     this.y += this.speedY;
-    // Nếu vượt ra khỏi dưới màn hình, respawn lại (theo spawnEnemy để đảm bảo phân bố đều)
+    // Nếu vượt ra khỏi dưới màn hình, respawn lại theo spawnEnemy() để đảm bảo phân bố đều
     if (this.y > HEIGHT) {
       let newEnemy = spawnEnemy();
       this.x = newEnemy.x;
